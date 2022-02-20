@@ -3,7 +3,7 @@ using System.Threading.Tasks;
 
 namespace FrozenForge.Hubs
 {
-    public interface IHubClient<THubClientMethods> : IAsyncDisposable
+    public interface IHubClient : IAsyncDisposable
 	{
 		Task ConnectAsync();
 		
