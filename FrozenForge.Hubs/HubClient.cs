@@ -3,15 +3,15 @@ using Microsoft.AspNetCore.SignalR.Client;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using System;
+using System.Linq.Expressions;
 using System.Net;
 using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
-using System.Threading;
 using System.Threading.Tasks;
 
 namespace FrozenForge.Hubs
 {
-	public abstract class HubClient : IHubClient
+    public abstract class HubClient : IHubClient
     {
 		protected HubClient(
 			ILogger logger,
@@ -88,7 +88,7 @@ namespace FrozenForge.Hubs
 
 	}
 
-	public abstract class HubClient<THubMethods> : HubClient
+	public abstract class HubClient<THubMethods> : HubClient, IHubClient<THubMethods>
 	{
 		protected HubClient(
 			ILogger logger,
@@ -106,21 +106,24 @@ namespace FrozenForge.Hubs
 		{
 		}
 
-		public Task<TResult> InvokeAsync<TResult>(Func<THubMethods, Func<Task<TResult>>> methodFunc)
+		public Task<TResult> InvokeAsync<TResult>(Expression<Func<THubMethods, Func<Task<TResult>>>> methodFunc)
 		{
-			return this.HubConnection.InvokeAsync<TResult>(GetMethodName(methodFunc));
+            return this.HubConnection.InvokeAsync<TResult>(GetMethodName(methodFunc));
 		}
 
-		public async Task<TResult> InvokeAsync<TParameters, TResult>(Func<THubMethods, Func<TParameters, Task<TResult>>> methodFunc, TParameters parameters)
+		public Task InvokeAsync<TParameters>(Expression<Func<THubMethods, Func<TParameters, Task>>> expression, TParameters parameters)
 		{
-			var methodName = GetMethodName(methodFunc);
-
-			return await this.HubConnection.InvokeAsync<TResult>(methodName, parameters);
+            return this.HubConnection.InvokeAsync(GetMethodName(expression), parameters);
 		}
 
-		private static string GetMethodName<TIn,TResult>(Func<TIn, TResult> methodFunc)
+		public async Task<TResult> InvokeAsync<TParameters, TResult>(Expression<Func<THubMethods, Func<TParameters, Task<TResult>>>> expression, TParameters parameters)
+		{
+			return await this.HubConnection.InvokeAsync<TResult>(GetMethodName(expression), parameters);
+		}
+
+		private static string GetMethodName<TTask>(Expression<Func<THubMethods, TTask>> expression)
         {
-			return Regex.Match(methodFunc.Method.Name, "<(.*?)>").Value.Trim('<', '>');
+            return ((((expression.Body as UnaryExpression).Operand as MethodCallExpression).Object as ConstantExpression).Value as System.Reflection.MethodInfo).Name;
 		}
 	}
 }
