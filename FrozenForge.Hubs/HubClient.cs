@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http.Connections.Client;
 using Microsoft.AspNetCore.SignalR.Client;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -6,7 +7,7 @@ using System;
 using System.Linq.Expressions;
 using System.Net;
 using System.Text.Json.Serialization;
-using System.Text.RegularExpressions;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace FrozenForge.Hubs
@@ -21,6 +22,23 @@ namespace FrozenForge.Hubs
 		}
 
 		protected HubClient(
+			ILogger logger,
+			Uri hubUri,
+			Action<HttpConnectionOptions> config)
+		{
+            this.Id = Guid.NewGuid();
+            this.Logger = logger;
+            this.HubConnection = new HubConnectionBuilder()
+				.AddJsonProtocol(x => x.PayloadSerializerOptions.ReferenceHandler = ReferenceHandler.Preserve)
+                .WithUrl(
+                    hubUri,
+                    config)
+                .Build();
+
+            this.Logger.LogDebug($"HubClient {Id}: Constructed");
+        }
+
+        protected HubClient(
 			ILogger logger,
 			Uri hubUri,
 			HttpContext httpContext,
@@ -47,13 +65,13 @@ namespace FrozenForge.Hubs
 					hubUri,
 					config =>
 					{
-						config.Cookies.Add(cookie);
+						if (cookie is not null) { config.Cookies.Add(cookie); }
 					})
 				.Build();
 
 			this.Logger.LogDebug($"HubClient {Id}: Constructed");
 
-			Task.Run(ConnectAsync);
+			//Task.Run(ConnectAsync);
 		}
 
 		public Guid Id { get; }
@@ -67,11 +85,25 @@ namespace FrozenForge.Hubs
 		public IDisposable On<TResult>(Func<TResult, Task> handler)
 			=> HubConnection.On(handler.Method.Name, handler);
 
-		public async Task ConnectAsync()
+		public async Task ConnectAsync(CancellationToken cancellationToken = default)
 		{
-			await HubConnection.StartAsync();
+			if (HubConnection.State != HubConnectionState.Disconnected)
+            {
+				throw new InvalidOperationException("Connection state is " + HubConnection.State);
+            }
 
-			this.Logger.LogDebug($"HubClient {Id}: {HubConnection.State}");
+			try
+			{
+				await HubConnection.StartAsync(cancellationToken);
+				
+				this.Logger.LogDebug($"HubClient {Id}: {HubConnection.State}");
+			}
+			catch (Exception exception)
+            {
+				this.Logger.LogError(exception, $"HubClient {Id}: Exception while attempting to starting HubConnection (State: {HubConnection.State})");
+
+				throw;
+            }
 		}
 
 		public async ValueTask DisposeAsync()

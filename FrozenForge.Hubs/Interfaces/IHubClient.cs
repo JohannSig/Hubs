@@ -7,7 +7,7 @@ namespace FrozenForge.Hubs
 {
 	public interface IHubClient : IAsyncDisposable
     {
-		Task ConnectAsync();
+		Task ConnectAsync(CancellationToken cancellationToken = default);
 
 		string ConnectionId { get; }
 

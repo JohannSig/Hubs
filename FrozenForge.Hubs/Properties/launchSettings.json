@@ -1,0 +1,10 @@
+﻿{
+  "profiles": {
+    "Push to GitHub": {
+      "commandName": "Executable",
+      "executablePath": "dotnet",
+      "commandLineArgs": "nuget push $(PackageId).$(PackageVersion).nupkg --source github-ffs --interactive",
+      "workingDirectory": "$(ProjectDir)bin\\$(Configuration)"
+    }
+  }
+}
