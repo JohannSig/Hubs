@@ -1,13 +1,21 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net5.0</TargetFramework>
+	  <TargetFramework>net6</TargetFramework>
+	  <AssemblyName>FrozenForge.Hubs</AssemblyName>
+	  <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
+	  <RepositoryType>git</RepositoryType>
+	  <RepositoryUrl>https://github.com/JohannSig/Hubs</RepositoryUrl>
+	  <PackageReleaseNotes>.NET 6 package</PackageReleaseNotes>
+	  <Description>.NET 6 HubClient.</Description>
+	  <PackageProjectUrl>https://github.com/JohannSig/Events</PackageProjectUrl>
+	  <Title>Frozen Forge's HubClient</Title>
+	  <Version>6.0.0</Version>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.AspNetCore.Http.Abstractions" Version="2.2.0" />
     <PackageReference Include="Microsoft.AspNetCore.Identity" Version="2.2.0" />
-    <PackageReference Include="Microsoft.AspNetCore.SignalR.Client" Version="5.0.5" />
+    <PackageReference Include="Microsoft.AspNetCore.SignalR.Client" Version="6.0.13" />
   </ItemGroup>
 
 </Project>
